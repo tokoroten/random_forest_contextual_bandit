@@ -20,15 +20,15 @@ class RandomForestContextualBandit:
         self.rf.fit(feature_vector, y)
 
     def _predict_proba_std(self, x):
-        def _single_predict_proba(estimators, _x):
-            result = estimators.predict_proba(_x)
+        def _single_predict_proba(estimator, _x):
+            result = estimator.predict_proba(_x)
             if result.shape[1] == 2:
                 return result[:, 1]
             else:
                 return np.zeros(_x.shape[0])
 
         proba_result = Parallel(n_jobs=self.rf.n_jobs, require="sharedmem")(
-                [delayed(_single_predict_proba)(estimators, x) for estimators in self.rf.estimators_]
+                [delayed(_single_predict_proba)(estimator, x) for estimator in self.rf.estimators_]
         )
 
         proba_result = np.array(proba_result)
