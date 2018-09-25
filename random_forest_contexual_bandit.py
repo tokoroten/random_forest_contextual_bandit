@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 
 def _single_predict_proba(estimators, _x):
     result = estimators.predict_proba(_x)
-    return result[:, 1]
+    return 1 - result[:, 0]
 
 
 class RandomForestContextualBandit:
