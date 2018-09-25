@@ -1,6 +1,6 @@
 import numpy as np
 from random_forest_contexual_bandit import RandomForestContextualBandit
-
+import time
 
 def generate_sample_data(sample_num=10000):
 
@@ -38,12 +38,12 @@ rfcb = RandomForestContextualBandit(rf_arg, arm_vector)
 
 print(feature_vec.shape, is_cv.shape)
 
-# initial fit
 step = 1000
 loop = 100
 total_conversion = 0
 arm_history = np.array([]).astype(np.int32)
 
+last_time = time.time()
 for i in range(loop):
     # predict
     start = i * step
@@ -67,3 +67,5 @@ for i in range(loop):
     else:
         # partial fit, quickly
         rfcb.partial_fit(feature_vec[start:end], choices_arms, current_y)
+    print("step", i, "time", time.time() - last_time)
+    last_time = time.time()
