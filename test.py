@@ -60,5 +60,10 @@ for i in range(loop):
 
     # fit
     arm_history = np.append(arm_history, choices_arms)
-    train_y = is_cv[np.arange(arm_history.shape[0]), arm_history]
-    rfcb.fit(feature_vec[:end], arm_history, train_y)
+    if i % 10 == 0:
+        # reconstruct RandomForest Tree, very slowly
+        train_y = is_cv[np.arange(arm_history.shape[0]), arm_history]
+        rfcb.fit(feature_vec[:end], arm_history, train_y)
+    else:
+        # partial fit, quickly
+        rfcb.partial_fit(feature_vec[start:end], choices_arms, current_y)

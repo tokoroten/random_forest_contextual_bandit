@@ -19,6 +19,20 @@ class RandomForestContextualBandit:
         feature_vector = np.concatenate((x, self.arm_vector[arm]), axis=1)
         self.rf.fit(feature_vector, y)
 
+    def partial_fit(self, x, arm, y):
+        feature_vector = np.concatenate((x, self.arm_vector[arm]), axis=1)
+        tree_indexes = self.rf.apply(feature_vector)
+        # print("indexes.shape", indexes.shape)
+        # indexes.shape is x.shape[0] * tree_num
+
+        # todo Parallel
+        for current_y, tree_index in zip(y, tree_indexes):
+            for index, tree in zip(tree_index, self.rf.estimators_):
+                #  value : array of double, shape [node_count, n_outputs, max_n_classes]
+                #         Contains the constant prediction value of each node.
+                # https://github.com/scikit-learn/scikit-learn/blob/a7e17117bb15eb3f51ebccc1bd53e42fcb4e6cd8/sklearn/tree/_tree.pyx#L547
+                tree.tree_.value[index][0][1 if current_y else 0] += 1
+
     def _predict_proba_std(self, x):
         def _single_predict_proba(estimator, _x):
             result = estimator.predict_proba(_x)
