@@ -2,7 +2,7 @@ import numpy as np
 from random_forest_contexual_bandit import RandomForestContextualBandit
 
 
-def generate_sample_data(sample_num = 10000):
+def generate_sample_data(sample_num=10000):
 
     weight = np.array([
         [0.05, 0.05, -0.05],
@@ -16,7 +16,7 @@ def generate_sample_data(sample_num = 10000):
     theta = np.dot(feature_vector, weight)
     is_cv = (theta > np.random.rand(sample_num, arm_num)).astype(np.int8)
 
-    return feature_vector, is_cv
+    return feature_vector, is_cv, weight
 
 
 print(generate_sample_data(10))
@@ -26,47 +26,39 @@ rf_arg = {
     "n_estimators": 200,
     "max_depth": 6,
     "min_samples_split": 200,
-    "min_samples_leaf": 10,
+    "min_samples_leaf": 100,
     "max_features": "auto",
     "class_weight": None,
 }
 
-arm_vector = 3
+feature_vec, is_cv, feature_weight = generate_sample_data(300000)
+arm_vector = is_cv.shape[1]
+#arm_vector = feature_weight
 rfcb = RandomForestContextualBandit(rf_arg, arm_vector)
 
-feature_vec, is_cv = generate_sample_data(300000)
 print(feature_vec.shape, is_cv.shape)
 
-
 # initial fit
-print("start initial fitting")
-initial_step = 10000
-arms = np.random.randint(3, size=initial_step)
-x = feature_vec[:initial_step]
-y = np.array([a[col] for a, col in zip(is_cv[:initial_step], arms)])
-print(x.shape, arms.shape, y.shape)
-print("total true", np.sum(y))
-rfcb.fit(x, arms, y)
-
 step = 1000
 loop = 100
-total_y = 0
-arm_list = arms
+total_conversion = 0
+arm_history = np.array([]).astype(np.int32)
 
-for i in range(100):
+for i in range(loop):
     # predict
-    start = initial_step + i * step
+    start = i * step
     end = start + step
-    x = feature_vec[start:end]
-    arms = rfcb.choice_arm(x)
-    y = np.array([a[col] for a, col in zip(is_cv[start:end], arms)])
-    total_y += np.sum(y)
-    print("step", i , "score", total_y / end)
+    context_vector = feature_vec[start:end]
+    if i == 0:
+        # use random arm at first time
+        choices_arms = np.random.randint(3, size=step)
+    else:
+        choices_arms = rfcb.choice_arm(context_vector)
+    current_y = is_cv[np.arange(start, end), choices_arms]
+    total_conversion += np.sum(current_y)
+    print("step", i, "score", total_conversion / end)
 
     # fit
-    arm_list = np.concatenate((arm_list, arms))
-    y = np.array([a[col] for a, col in zip(is_cv[:end], arm_list)])
-    #print("fit")
-    #print(feature_vec[:end].shape, arm_list.shape, y.shape)
-    rfcb.fit(feature_vec[:end], arm_list, y)
-
+    arm_history = np.append(arm_history, choices_arms)
+    train_y = is_cv[np.arange(arm_history.shape[0]), arm_history]
+    rfcb.fit(feature_vec[:end], arm_history, train_y)
