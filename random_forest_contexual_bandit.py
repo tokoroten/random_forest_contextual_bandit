@@ -3,11 +3,6 @@ import numpy as np
 from joblib import Parallel, delayed
 
 
-def _single_predict_proba(estimators, _x):
-    result = estimators.predict_proba(_x)
-    return 1 - result[:, 0]
-
-
 class RandomForestContextualBandit:
     def __init__(self, rf_param, arm_vector=None):
         self.arm_vector = arm_vector
@@ -25,6 +20,13 @@ class RandomForestContextualBandit:
         self.rf.fit(feature_vector, y)
 
     def _predict_proba_std(self, x):
+        def _single_predict_proba(estimators, _x):
+            result = estimators.predict_proba(_x)
+            if result.shape[1] == 2:
+                return result[:, 1]
+            else:
+                return np.zeros(_x.shape[0])
+
         proba_result = Parallel(n_jobs=self.rf.n_jobs, require="sharedmem")(
                 [delayed(_single_predict_proba)(estimators, x) for estimators in self.rf.estimators_]
         )
