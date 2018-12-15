@@ -34,14 +34,16 @@ rf_arg = {
 feature_vec, is_cv, feature_weight = generate_sample_data(300000)
 arm_vector = is_cv.shape[1]
 #arm_vector = feature_weight
-rfcb = RandomForestContextualBandit(rf_arg, arm_vector)
+rfcb = RandomForestContextualBandit(rf_arg, 3)
 
 print(feature_vec.shape, is_cv.shape)
 
-step = 1000
+step = 3000
 loop = 100
 total_conversion = 0
 arm_history = np.array([]).astype(np.int32)
+
+output = []
 
 last_time = time.time()
 for i in range(loop):
@@ -55,8 +57,9 @@ for i in range(loop):
     else:
         choices_arms = rfcb.choice_arm(context_vector)
     current_y = is_cv[np.arange(start, end), choices_arms]
-    total_conversion += np.sum(current_y)
-    print("step", i, "score", total_conversion / end)
+    correct_count = np.sum(current_y)
+    total_conversion += correct_count
+    print("step", i, "correct", correct_count, "total_score", total_conversion / end)
 
     # fit
     arm_history = np.append(arm_history, choices_arms)
@@ -67,5 +70,14 @@ for i in range(loop):
     else:
         # partial fit, quickly
         rfcb.partial_fit(feature_vec[start:end], choices_arms, current_y)
-    print("step", i, "time", time.time() - last_time)
+
+    time_delta = time.time() - last_time
+    print("step", i, "time", time_delta)
+    output.append([i, correct_count, total_conversion / end, time_delta])
+
     last_time = time.time()
+
+with open("result.csv", "w") as fp:
+    print("step,correct_count,score,time_delta", file=fp)
+    for out in output:
+        print(",".join(map(str, out)), file=fp)
