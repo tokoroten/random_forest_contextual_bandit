@@ -1,8 +1,10 @@
 # Random Forest Contextual Bandit
 
-TODO: write in english
-
 RandomForestを使って、文脈付きマルチアームバンディットを実装
+
+## Concept
+- RandomForest is using average of each tree's CVR. so it can also get standard deviation(SD) of CVR at the same time.
+- If having predicted CVR and CVR SD, you can use Thompson Sampling or UBC1 for arm's expectation CVR.
 
 ## コンセプト
 - RandomForestは、各DecisionTreeのCVRを平均化しているから、その過程で分散も出せる
@@ -14,6 +16,14 @@ RandomForestを使って、文脈付きマルチアームバンディットを�
 - 木の作り直しではなく、末端の値の変更により、予測CVRの精度を改善する
 
 ## 基本方針
+### RandomForestContextualBandit
+- multi arm banditの腕の数だけ、RandomForestClassifierで予測器を生成
+- それぞれのArmのRandomForestの各木でCVRを計算
+- 各木のCVRの平均値と分散から、トンプソンサンプリング、もしくはUBC1を行い、各アームの期待CVRを算出
+- 期待CVRからアームを選択
+
+### RandomForestContextualBanditWithArmVector
+- Armの特徴量を活用するために、全体で一つのRandomForestClassifierを作る
 - FeatureVector = ContextVector + ArmVector
     - ArmVectorが無い場合は、ArmのIDを1hot encoding
 - RandomForestの各木でCVRを計算
