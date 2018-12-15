@@ -2,6 +2,7 @@ import sklearn.ensemble
 import numpy as np
 from joblib import Parallel, delayed
 
+
 class RandomForestContextualBandit:
     def __init__(self, rf_param, arm_num=2):
         self.arm_num = arm_num
@@ -66,7 +67,6 @@ class RandomForestContextualBandit:
         return proba + sd * sd_rate
 
     def choice_arm(self, x, mode="thompson", ubc1_sd=2.0):
-        #print("choice_arm x.shape", x.shape)
         proba_list = np.zeros((x.shape[0], self.arm_num), dtype=np.float64)
 
         for arm_id in range(self.arm_num):
@@ -124,13 +124,9 @@ class RandomForestContextualBanditWithArmVector:
         )
 
         proba_result = np.array(proba_result)
-        #print(proba_result.shape)
 
         proba = np.mean(proba_result, axis=0)
         sd = np.std(proba_result, axis=0)
-
-        #print("proba.shape", proba.shape)
-        #print("sd.shape", sd.shape)
 
         return proba, sd
 
@@ -143,12 +139,10 @@ class RandomForestContextualBanditWithArmVector:
         return proba + sd * sd_rate
 
     def choice_arm(self, x, mode="thompson", ubc1_sd=2.0):
-        #print("choice_arm x.shape", x.shape)
         proba_list = np.zeros((x.shape[0], self.arm_num), dtype=np.float64)
 
         for arm_id in range(self.arm_num):
             feature_vector = np.concatenate((x, np.tile(self.arm_vector[arm_id], (x.shape[0], 1))), axis=1)
-            #print("choice_arm feature_vector .shape", feature_vector .shape)
 
             if mode == "ubc1":
                 proba_list[:, arm_id] = self._predict_proba_ubc1(feature_vector, ubc1_sd)
@@ -156,4 +150,3 @@ class RandomForestContextualBanditWithArmVector:
                 proba_list[:, arm_id] = self._predict_proba_thompson_sampling(feature_vector)
 
         return np.argmax(proba_list, axis=1)
-
