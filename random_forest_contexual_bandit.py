@@ -62,16 +62,16 @@ class RandomForestContextualBandit:
         proba, sd = self._predict_proba_std(x, arm_id)
         return [np.random.normal(p, s) for p, s in zip(proba, sd)]
 
-    def _predict_proba_ubc1(self, x, arm_id, sd_rate):
+    def _predict_proba_ucb1(self, x, arm_id, sd_rate):
         proba, sd = self._predict_proba_std(x, arm_id)
         return proba + sd * sd_rate
 
-    def choice_arm(self, x, mode="thompson", ubc1_sd=2.0):
+    def choice_arm(self, x, mode="thompson", ucb1_sd=2.0):
         proba_list = np.zeros((x.shape[0], self.arm_num), dtype=np.float64)
 
         for arm_id in range(self.arm_num):
-            if mode == "ubc1":
-                proba_list[:, arm_id] = self._predict_proba_ubc1(x, arm_id, ubc1_sd)
+            if mode == "ucb1":
+                proba_list[:, arm_id] = self._predict_proba_ucb1(x, arm_id, ucb1_sd)
             elif mode == "thompson":
                 proba_list[:, arm_id] = self._predict_proba_thompson_sampling(x, arm_id)
 
@@ -134,18 +134,18 @@ class RandomForestContextualBanditWithArmVector:
         proba, sd = self._predict_proba_std(x)
         return [np.random.normal(p, s) for p, s in zip(proba, sd)]
 
-    def _predict_proba_ubc1(self, x, sd_rate=2):
+    def _predict_proba_ucb1(self, x, sd_rate=2):
         proba, sd = self._predict_proba_std(x)
         return proba + sd * sd_rate
 
-    def choice_arm(self, x, mode="thompson", ubc1_sd=2.0):
+    def choice_arm(self, x, mode="thompson", ucb1_sd=2.0):
         proba_list = np.zeros((x.shape[0], self.arm_num), dtype=np.float64)
 
         for arm_id in range(self.arm_num):
             feature_vector = np.concatenate((x, np.tile(self.arm_vector[arm_id], (x.shape[0], 1))), axis=1)
 
-            if mode == "ubc1":
-                proba_list[:, arm_id] = self._predict_proba_ubc1(feature_vector, ubc1_sd)
+            if mode == "ucb1":
+                proba_list[:, arm_id] = self._predict_proba_ucb1(feature_vector, ucb1_sd)
             elif mode == "thompson":
                 proba_list[:, arm_id] = self._predict_proba_thompson_sampling(feature_vector)
 
